@@ -1,0 +1,37 @@
+# Node.js dependencies
+/node_modules
+
+# Environment variables
+.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database files (jika pakai SQLite atau file database lokal)
+*.sqlite
+*.sqlite3
+
+# Build output (jika ada build process)
+/dist
+/build
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/editor config
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Optional: coverage reports
+coverage/
+
+# Optional: npm package lock
+package-lock.json
+yarn.lock

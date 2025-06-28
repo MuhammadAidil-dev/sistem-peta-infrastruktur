@@ -17,50 +17,54 @@ const MapComponent = ({ infrastrukturData }) => {
 
     // Load Leaflet dynamically
     const loadLeaflet = async () => {
-      if (typeof window !== 'undefined' && !window.L) {
-        // Load Leaflet CSS
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-        document.head.appendChild(link);
+      if (typeof window === 'undefined') return;
 
-        // Load Leaflet JS
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-        document.head.appendChild(script);
+      // Load Leaflet CSS
+      const leafletCSS = document.createElement('link');
+      leafletCSS.rel = 'stylesheet';
+      leafletCSS.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(leafletCSS);
 
-        await new Promise((resolve) => {
-          script.onload = resolve;
-        });
+      // Load Leaflet JS
+      const leafletScript = document.createElement('script');
+      leafletScript.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      document.head.appendChild(leafletScript);
+      await new Promise((resolve) => (leafletScript.onload = resolve));
 
-        // Load MarkerCluster
-        const clusterScript = document.createElement('script');
-        clusterScript.src =
-          'https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.js';
-        document.head.appendChild(clusterScript);
-
-        const clusterCSS = document.createElement('link');
-        clusterCSS.rel = 'stylesheet';
-        clusterCSS.href =
-          'https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.css';
-        document.head.appendChild(clusterCSS);
-
-        const clusterDefaultCSS = document.createElement('link');
-        clusterDefaultCSS.rel = 'stylesheet';
-        clusterDefaultCSS.href =
-          'https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css';
-        document.head.appendChild(clusterDefaultCSS);
-
-        await new Promise((resolve) => {
-          clusterScript.onload = resolve;
-        });
+      if (!window.L) {
+        console.error('Leaflet gagal dimuat.');
+        return;
       }
 
-      // Initialize map
+      // Load MarkerCluster CSS
+      const clusterCSS = document.createElement('link');
+      clusterCSS.rel = 'stylesheet';
+      clusterCSS.href =
+        'https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.css';
+      document.head.appendChild(clusterCSS);
+
+      const clusterDefaultCSS = document.createElement('link');
+      clusterDefaultCSS.rel = 'stylesheet';
+      clusterDefaultCSS.href =
+        'https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css';
+      document.head.appendChild(clusterDefaultCSS);
+
+      // Load MarkerCluster JS
+      const clusterScript = document.createElement('script');
+      clusterScript.src =
+        'https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.js';
+      document.head.appendChild(clusterScript);
+      await new Promise((resolve) => (clusterScript.onload = resolve));
+
+      if (!window.L.markerClusterGroup) {
+        console.error('MarkerCluster gagal dimuat.');
+        return;
+      }
+
       const L = window.L;
+
       const map = L.map(mapRef.current).setView([-0.3075171, 103.1146603], 10);
 
-      // Add tile layers
       const osmLayer = L.tileLayer(
         'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         {
@@ -78,86 +82,70 @@ const MapComponent = ({ infrastrukturData }) => {
         }
       );
 
-      // Layer control
-      const baseMaps = {
-        OpenStreetMap: osmLayer,
-        'Google Satellite': googleSatelliteLayer,
-      };
-      L.control.layers(baseMaps).addTo(map);
+      L.control
+        .layers({
+          OpenStreetMap: osmLayer,
+          'Google Satellite': googleSatelliteLayer,
+        })
+        .addTo(map);
 
-      // Marker cluster
       const markers = L.markerClusterGroup();
       map.addLayer(markers);
 
-      // Custom icon
       const customIcon = L.icon({
         iconUrl:
-          'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIwIDQwQzIwIDQwIDQwIDI2IDQwIDIwQzQwIDkgMzEgMCAyMCAwQzkgMCAwIDkgMCAyMEMwIDI2IDIwIDQwIDIwIDQwWiIgZmlsbD0iI0ZGNDQ0NCIvPgo8Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSI4IiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K',
+          'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMjAgNDBDMjAgNDAgNDAgMjYgNDAgMjBDNDAgOSAzMSAwIDIwIDBDOSAwIDAgOSAwIDIwQzAgMjYgMjAgNDAgMjAgNDBaIiBmaWxsPSIjRkY0NDQ0Ii8+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iOCIgc3R5bGU9ImZpbGw6d2hpdGUiLz48L3N2Zz4=',
         iconSize: [40, 40],
         iconAnchor: [20, 40],
         popupAnchor: [0, -40],
       });
 
-      // Add markers
       infrastrukturData.forEach((data) => {
-        const marker = L.marker([data.lat, data.lng], { icon: customIcon })
-          .bindPopup(`
-            <div class="p-2">
-              <b>${data.infrastrukturName}</b><br>
-              Tipe: ${data.infrastrukturType}<br>
-              Status: ${data.infrastrukturStatus}<br>
-              Alamat: ${data.address || ''}<br>
-              Deskripsi: ${data.description}<br>
-              <a href="https://www.google.com/maps?q=${data.lat},${
-          data.lng
-        }" target="_blank" class="text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-1">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                </svg>
-                Tracking
-              </a>
-            </div>
-          `);
+        const marker = L.marker([data.lat, data.lng], {
+          icon: customIcon,
+        }).bindPopup(
+          `<div class="p-2">
+            <b>${data.infrastrukturName}</b><br>
+            Tipe: ${data.infrastrukturType}<br>
+            Status: ${data.infrastrukturStatus}<br>
+            Alamat: ${data.address || ''}<br>
+            Deskripsi: ${data.description}<br>
+            <a href="https://www.google.com/maps?q=${data.lat},${
+            data.lng
+          }" target="_blank">
+              Tracking
+            </a>
+          </div>`
+        );
         markers.addLayer(marker);
       });
 
-      // Add legend
-      const legend = L.control({ position: 'topright' });
-      legend.onAdd = function () {
-        const div = L.DomUtil.create('div', 'leaflet-control-legend');
-        div.innerHTML = `
-          <div style="background-color: white; padding: 10px; font-size: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); border-radius: 5px;">
-            <div style="display: flex; align-items: center;">
-              <div style="width: 20px; height: 20px; background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIwIDQwQzIwIDQwIDQwIDI2IDQwIDIwQzQwIDkgMzEgMCAyMCAwQzkgMCAwIDkgMCAyMEMwIDI2IDIwIDQwIDIwIDQwWiIgZmlsbD0iI0ZGNDQ0NCIvPgo8Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSI4IiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K') center/cover; margin-right: 8px;"></div>
-              <span>Lokasi Infrastruktur</span>
-            </div>
-          </div>
-        `;
-        return div;
-      };
-      legend.addTo(map);
-
-      // Try to get user location
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const userLat = position.coords.latitude;
-            const userLng = position.coords.longitude;
-            const userIcon = L.icon({
-              iconUrl:
-                'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIGZpbGw9IiMyNTYzZWIiLz4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iNCIgZmlsbD0id2hpdGUiLz4KPC9zdmc+',
-              iconSize: [24, 24],
-              iconAnchor: [12, 12],
-            });
-            L.marker([userLat, userLng], { icon: userIcon })
-              .bindPopup('Anda berada di sini.')
-              .addTo(map);
-          },
-          (error) => {
-            console.error('Geolokasi gagal:', error.message);
+      // Tambahkan GeoJSON Polygon
+      fetch('datatanah1.geojson')
+        .then((res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
+        .then((geojson) => {
+          if (!L.geoJSON) {
+            console.error('GeoJSON belum tersedia.');
+            return;
           }
-        );
-      }
+          L.geoJSON(geojson, {
+            style: { color: 'red', weight: 2 },
+            onEachFeature: (feature, layer) => {
+              const props = feature.properties;
+              layer.bindPopup(
+                `<b>${props.nama ?? 'Tanah'}</b><br>Luas: ${
+                  props.luas ?? '-'
+                } m2`
+              );
+            },
+          }).addTo(map);
+        })
+        .catch((err) => {
+          console.error('Error load GeoJSON:', err);
+        });
 
       mapInstanceRef.current = map;
       markersRef.current = markers;
@@ -239,7 +227,7 @@ const MapComponent = ({ infrastrukturData }) => {
       markersRef.current.addLayer(marker);
     }
 
-    setSearchTerm(item.Nama_Barang);
+    setSearchTerm(item.infrastrukturName);
     setShowSuggestions(false);
   };
 
@@ -354,9 +342,9 @@ const MapComponent = ({ infrastrukturData }) => {
                       index === selectedIndex ? 'bg-blue-50' : ''
                     }`}
                   >
-                    <div className="font-medium">{item.Nama_Barang}</div>
+                    <div className="font-medium">{item.infrastrukturName}</div>
                     <div className="text-gray-600 text-xs">
-                      {item.nama_kecamatan} - {item.nama_desakelurahan}
+                      {item.infrastrukturType} - {item.infrastrukturStatus}
                     </div>
                   </button>
                 ))}

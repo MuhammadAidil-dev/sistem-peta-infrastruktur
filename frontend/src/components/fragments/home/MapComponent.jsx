@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, X, RotateCcw } from 'lucide-react';
 
-const MapComponent = ({ infrastrukturData }) => {
+const MapComponent = ({ infrastrukturData, geojsonData }) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef(null);
@@ -121,31 +121,24 @@ const MapComponent = ({ infrastrukturData }) => {
       });
 
       // Tambahkan GeoJSON Polygon
-      fetch('datatanah1.geojson')
-        .then((res) => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return res.json();
-        })
-        .then((geojson) => {
-          if (!L.geoJSON) {
-            console.error('GeoJSON belum tersedia.');
-            return;
-          }
-          L.geoJSON(geojson, {
-            style: { color: 'red', weight: 2 },
-            onEachFeature: (feature, layer) => {
-              const props = feature.properties;
-              layer.bindPopup(
-                `<b>${props.nama ?? 'Tanah'}</b><br>Luas: ${
-                  props.luas ?? '-'
-                } m2`
-              );
-            },
-          }).addTo(map);
-        })
-        .catch((err) => {
-          console.error('Error load GeoJSON:', err);
+      if (geojsonData) {
+        const polygonLayer = L.geoJSON(geojsonData, {
+          style: { color: 'red', weight: 2 },
+          onEachFeature: (feature, layer) => {
+            const props = feature.properties || {};
+            layer.bindPopup(
+              `<div class="p-2">
+            <b>${props.nama || 'area'}</b><br>
+            Deskripsi: ${props.deskripsi || '-'}<br>
+            Status: ${props.status || '-'}<br>
+            Luas: ${props.luas || '-'} m2<br>
+          </div>`
+            );
+          },
         });
+
+        polygonLayer.addTo(map);
+      }
 
       mapInstanceRef.current = map;
       markersRef.current = markers;

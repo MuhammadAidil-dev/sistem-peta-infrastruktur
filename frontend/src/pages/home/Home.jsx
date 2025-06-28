@@ -5,6 +5,7 @@ import { fetchData } from '../../utils/utils';
 
 const HomePage = () => {
   const [infrastrukturData, setInfrastrukturData] = useState([]);
+  const [geojsonData, setGeojsonData] = useState({});
   const [loading, setLoading] = useState(true);
   // get data infrastruktur
   useEffect(() => {
@@ -23,12 +24,36 @@ const HomePage = () => {
         setLoading(false);
       }
     };
+
+    const getGeoJSON = () => {
+      const geojsonString = localStorage.getItem('geojsonData');
+
+      if (!geojsonString) {
+        console.log('GeoJSON belum ada di localStorage.');
+        return;
+      }
+
+      try {
+        const data = JSON.parse(geojsonString);
+        console.log('GeoJSON data:', data);
+
+        setGeojsonData(data);
+      } catch (error) {
+        console.error('Gagal parse GeoJSON:', error);
+      }
+    };
+    getGeoJSON();
     getData();
   }, []);
 
   if (loading) return null;
 
-  return <MapComponent infrastrukturData={infrastrukturData} />;
+  return (
+    <MapComponent
+      infrastrukturData={infrastrukturData}
+      geojsonData={geojsonData}
+    />
+  );
 };
 
 export default HomePage;

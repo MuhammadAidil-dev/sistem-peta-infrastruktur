@@ -52,25 +52,118 @@ const AdminDashboard = () => {
     setIsOpen(false);
   };
 
+  // handle ekspor data
+  const exportJSONToCSV = (data, filename = 'data.csv') => {
+    if (!data || !data.length) {
+      console.error('Data kosong atau tidak valid.');
+      return;
+    }
+
+    const headers = Object.keys(data[0]);
+    const csvRows = [headers.join(',')];
+
+    for (const row of data) {
+      const values = headers.map((header) => {
+        const val = row[header];
+        const escaped = ('' + val).replace(/"/g, '""');
+        return `"${escaped}"`;
+      });
+      csvRows.push(values.join(','));
+    }
+
+    const csvString = csvRows.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+
+    URL.revokeObjectURL(url);
+  };
+
+  // handle upload geojson
+  const handleGeoJSONUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) {
+      alert('Tidak ada file yang dipilih.');
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      try {
+        const geojsonText = e.target.result;
+        const geojsonData = JSON.parse(geojsonText);
+        console.log('GeoJSON Object:', geojsonData);
+
+        // Contoh: ambil semua fitur
+        const features = geojsonData.features || [];
+        console.log('Features:', features);
+
+        localStorage.setItem('geojsonData', JSON.stringify(geojsonData));
+        alert('Berhasil upload file');
+      } catch (error) {
+        console.error('Error parsing GeoJSON:', error);
+        alert('File bukan GeoJSON yang valid.');
+      } finally {
+        // clear file
+        event.target.value = '';
+      }
+    };
+
+    reader.readAsText(file);
+  };
+
   return (
     <AdminLayout>
       <div className="p-8 flex flex-col">
         <h2 className="text-4xl font-semibold text-black">Dashboard</h2>
+
         <div className="grid grid-cols-3 mt-8">
           <Card data={infrastrukturData} />
         </div>
+
         <div className="mt-8">
           <div className="flex justify-between mb-4">
             <h3 className="text-lg font-semibold">Data Infrastruktur</h3>
-            <button
-              onClick={() => setIsOpen(true)}
-              className="bg-green-500 text-white text-sm font-semibold p-2 rounded-sm cursor-pointer"
-            >
-              Tambah data
-            </button>
+            <div className="flex gap-2 items-center">
+              <div>
+                <label
+                  htmlFor="geojsonInput"
+                  className="bg-yellow-500 text-white text-sm font-semibold p-2 rounded-sm cursor-pointer inline-block"
+                >
+                  Upload GeoJSON
+                </label>
+                <input
+                  type="file"
+                  id="geojsonInput"
+                  accept=".geojson,application/json"
+                  className="hidden"
+                  onChange={handleGeoJSONUpload}
+                />
+              </div>
+
+              <button
+                onClick={() => exportJSONToCSV(infrastrukturData, 'data.csv')}
+                className="bg-blue-500 text-white text-sm font-semibold p-2 rounded-sm cursor-pointer"
+              >
+                Ekspor data ke CSV
+              </button>
+
+              <button
+                onClick={() => setIsOpen(true)}
+                className="bg-green-500 text-white text-sm font-semibold p-2 rounded-sm cursor-pointer"
+              >
+                Tambah data
+              </button>
+            </div>
           </div>
+
           {infrastrukturData.length > 0 ? (
-            <table className="table-auto w-full border-collapse ">
+            <table className="table-auto w-full border-collapse mt-4">
               <thead>
                 <tr className="bg-slate-100">
                   <th className="border border-gray-300 p-2">No</th>
@@ -88,7 +181,7 @@ const AdminDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {infrastrukturData?.map((data, index) => (
+                {infrastrukturData.map((data, index) => (
                   <tr key={data.id}>
                     <td className="border border-gray-300 p-2 text-center">
                       {index + 1}
@@ -110,6 +203,7 @@ const AdminDashboard = () => {
                         href={`https://www.google.com/maps?q=${data.lat},${data.lng}`}
                         className="bg-blue-500 text-white font-semibold text-xs p-2 rounded-sm flex justify-center items-center"
                         target="_blank"
+                        rel="noreferrer"
                       >
                         Lokasi
                       </a>
@@ -119,11 +213,10 @@ const AdminDashboard = () => {
               </tbody>
             </table>
           ) : (
-            <p>Tidak ada data</p>
+            <p className="mt-4">Tidak ada data</p>
           )}
         </div>
 
-        {/* modal untuk tambah data */}
         {isOpen && (
           <AddDataModal onAddData={handleAddData} onClose={handleCloseModal} />
         )}

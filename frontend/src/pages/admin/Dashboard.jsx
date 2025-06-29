@@ -84,37 +84,65 @@ const AdminDashboard = () => {
   };
 
   // handle upload geojson
-  const handleGeoJSONUpload = (event) => {
-    const file = event.target.files[0];
-    if (!file) {
-      alert('Tidak ada file yang dipilih.');
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      try {
-        const geojsonText = e.target.result;
-        const geojsonData = JSON.parse(geojsonText);
-        console.log('GeoJSON Object:', geojsonData);
-
-        // Contoh: ambil semua fitur
-        const features = geojsonData.features || [];
-        console.log('Features:', features);
-
-        localStorage.setItem('geojsonData', JSON.stringify(geojsonData));
-        alert('Berhasil upload file');
-      } catch (error) {
-        console.error('Error parsing GeoJSON:', error);
-        alert('File bukan GeoJSON yang valid.');
-      } finally {
-        // clear file
-        event.target.value = '';
+  const handleGeoJSONUpload = async (event) => {
+    try {
+      const file = event.target.files[0];
+      if (!file) {
+        alert('Tidak ada file yang dipilih.');
+        return;
       }
-    };
 
-    reader.readAsText(file);
+      const formData = new FormData();
+      formData.append('fileData', file);
+
+      // Proses upload ke backend
+      const { status, message } = await fetchData(`${CONFIG.API_URL}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (status !== 'success') {
+        alert(`Gagal upload file: ${message || 'Unknown error'}`);
+        return;
+      }
+
+      // Baca file secara lokal
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        try {
+          const geojsonText = e.target.result;
+          const geojsonData = JSON.parse(geojsonText);
+          console.log('GeoJSON Object:', geojsonData);
+
+          // Contoh: ambil semua fitur
+          const features = geojsonData.features || [];
+          console.log('Features:', features);
+
+          localStorage.setItem('geojsonData', JSON.stringify(geojsonData));
+          alert('Berhasil upload dan parsing GeoJSON');
+        } catch (error) {
+          console.error('Error parsing GeoJSON:', error);
+          alert('File bukan GeoJSON yang valid.');
+        } finally {
+          // Clear file input
+          event.target.value = '';
+        }
+      };
+
+      reader.onerror = () => {
+        console.error('Error membaca file lokal.');
+        alert('Gagal membaca file.');
+        event.target.value = '';
+      };
+
+      reader.readAsText(file);
+    } catch (error) {
+      console.error('Error upload file:', error);
+      alert('Terjadi error saat upload file.');
+      // Pastikan file input dikosongkan jika terjadi error
+      event.target.value = '';
+    }
   };
 
   return (
